@@ -1,4 +1,4 @@
-module source.golabs.io/ops-tech/go-run
+module github.com/gojekfarm/go-run
 
 go 1.12
 
