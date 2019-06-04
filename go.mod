@@ -1,3 +1,3 @@
-module source.golabs.io/go-run
+module source.golabs.io/ops-tech/go-run
 
 go 1.12
