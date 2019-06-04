@@ -1,19 +1,15 @@
 package go_run
 
-import (
-	"fmt"
-	"log"
-)
-
 type Dispatcher struct {
 	// A pool of background_processing channels that are registered with the dispatcher
 	maxWorkers int
 	WorkerPool chan chan Job
 	jobQueue   chan Job
 	maxRetry   int
+	logger     Logger
 }
 
-func NewDispatcher(config WorkerConfig) *Dispatcher {
+func NewDispatcher(config WorkerConfig, logger Logger) *Dispatcher {
 	queue := make(chan Job, config.QueueSize)
 	pool := make(chan chan Job, config.MaxWorkers)
 	return &Dispatcher{
@@ -21,13 +17,14 @@ func NewDispatcher(config WorkerConfig) *Dispatcher {
 		maxWorkers: config.MaxWorkers,
 		jobQueue:   queue,
 		maxRetry:   config.MaxRetry,
+		logger:     logger,
 	}
 }
 
 func (d *Dispatcher) Run() {
 	// starting n number of background_processing
 	for i := 0; i < d.maxWorkers; i++ {
-		worker := NewWorker(d.WorkerPool, d.maxRetry)
+		worker := NewWorker(d.WorkerPool, d.maxRetry, d.logger)
 		worker.Start()
 	}
 
@@ -39,12 +36,12 @@ func (d *Dispatcher) Enqueue(job Job) {
 }
 
 func (d *Dispatcher) dispatch() {
-	fmt.Println("Worker que dispatcher started...")
+	d.logger.Infof("Worker que dispatcher started...")
 	for {
 
 		select {
 		case job := <-d.jobQueue:
-			log.Printf("a dispatcher request received")
+			d.logger.Infof("a dispatcher request received")
 			// a job request has been received
 			go func(job Job) {
 				// try to obtain a worker job channel that is available.

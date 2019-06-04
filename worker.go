@@ -1,20 +1,21 @@
 package go_run
 
-import "fmt"
-
 type Worker struct {
 	WorkerPool chan chan Job
 	JobChannel chan Job
 	MaxRetry   int
 	quit       chan bool
+	logger     Logger
 }
 
-func NewWorker(workerPool chan chan Job, maxRetry int) Worker {
+func NewWorker(workerPool chan chan Job, maxRetry int, logger Logger) Worker {
 	return Worker{
 		WorkerPool: workerPool,
 		JobChannel: make(chan Job),
 		MaxRetry:   maxRetry,
-		quit:       make(chan bool)}
+		quit:       make(chan bool),
+		logger:     logger,
+	}
 }
 
 // Start method starts the run loop for the worker, listening for a quit channel in
@@ -27,11 +28,12 @@ func (w Worker) Start() {
 
 			select {
 			case job := <-w.JobChannel:
-				fmt.Printf("Worker processing job")
+				w.logger.Infof("Worker processing job")
 				// we have received a work request.
 				w.executeJob(job, 0)
 			case <-w.quit:
 				// we have received a signal to stop
+				w.logger.Infof("Worker shutting down")
 				return
 			}
 		}
@@ -41,26 +43,26 @@ func (w Worker) Start() {
 func (w Worker) executeJob(job Job, errorCount int) {
 	defer func() {
 		if r := recover(); r != nil {
-			fmt.Printf("Job panicked")
+			w.logger.Errorf("Job panicked")
 			w.retryIfErrorCount(job, errorCount)
 		}
 	}()
 
 	if err := job.Execute(); err != nil {
-		fmt.Printf("Error Executing Job: %s", err.Error())
+		w.logger.Errorf("Error Executing Job: %s", err.Error())
 		w.retryIfErrorCount(job, errorCount)
 	} else {
-		fmt.Printf("Worker finished processing job")
+		w.logger.Infof("Worker finished processing job")
 		return
 	}
 }
 
 func (w Worker) retryIfErrorCount(job Job, errorCount int) {
 	if errorCount < w.MaxRetry {
-		fmt.Printf("Retrying Job")
+		w.logger.Errorf("Retrying Job")
 		w.executeJob(job, errorCount+1)
 	} else {
-		fmt.Printf("Job exceeded retry count")
+		w.logger.Errorf("Job exceeded retry count")
 		return
 	}
 }

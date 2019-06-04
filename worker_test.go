@@ -21,6 +21,7 @@ func TestWorker_Start(t *testing.T) {
 		WorkerPool: pool,
 		JobChannel: jobChannel,
 		quit:       make(chan bool, 1),
+		logger:     TestLogger{},
 	}
 	w.Start()
 
@@ -47,6 +48,7 @@ func TestWorker_Stop(t *testing.T) {
 			WorkerPool: make(chan chan Job, 1),
 			JobChannel: make(chan Job, 1),
 			quit:       quitChannel,
+			logger:     TestLogger{},
 		}
 		w.Stop()
 		res := <-quitChannel

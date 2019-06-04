@@ -11,11 +11,14 @@ func TestDispatcher(t *testing.T) {
 		resultChannel: resultChannel,
 	}
 
-	d := NewDispatcher(WorkerConfig{
-		MaxWorkers: 2,
-		QueueSize:  5,
-		MaxRetry:   1,
-	})
+	d := NewDispatcher(
+		WorkerConfig{
+			MaxWorkers: 2,
+			QueueSize:  5,
+			MaxRetry:   1,
+		},
+		TestLogger{},
+	)
 	d.Run()
 
 	t.Run("performs the job enqueued", func(t *testing.T) {
