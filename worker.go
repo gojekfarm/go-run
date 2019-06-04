@@ -1,8 +1,6 @@
 package go_run
 
-import (
-	"source.golabs.io/ops-tech/aether/pkg/logger"
-)
+import "fmt"
 
 type Worker struct {
 	WorkerPool chan chan Job
@@ -29,7 +27,7 @@ func (w Worker) Start() {
 
 			select {
 			case job := <-w.JobChannel:
-				logger.Infof("Worker processing job")
+				fmt.Printf("Worker processing job")
 				// we have received a work request.
 				w.executeJob(job, 0)
 			case <-w.quit:
@@ -43,26 +41,26 @@ func (w Worker) Start() {
 func (w Worker) executeJob(job Job, errorCount int) {
 	defer func() {
 		if r := recover(); r != nil {
-			logger.Errorf("Job panicked")
+			fmt.Printf("Job panicked")
 			w.retryIfErrorCount(job, errorCount)
 		}
 	}()
 
 	if err := job.Execute(); err != nil {
-		logger.Errorf("Error Executing Job: %s", err.Error())
+		fmt.Printf("Error Executing Job: %s", err.Error())
 		w.retryIfErrorCount(job, errorCount)
 	} else {
-		logger.Infof("Worker finished processing job")
+		fmt.Printf("Worker finished processing job")
 		return
 	}
 }
 
 func (w Worker) retryIfErrorCount(job Job, errorCount int) {
 	if errorCount < w.MaxRetry {
-		logger.Infof("Retrying Job")
+		fmt.Printf("Retrying Job")
 		w.executeJob(job, errorCount+1)
 	} else {
-		logger.Errorf("Job exceeded retry count")
+		fmt.Printf("Job exceeded retry count")
 		return
 	}
 }
